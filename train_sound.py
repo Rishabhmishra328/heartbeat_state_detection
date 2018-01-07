@@ -67,13 +67,14 @@ for data in data_list:
 # print(input_data, output_data)
 #Training
 # params
-learning_rate = 0.001
+learning_rate = 0.0001
 epochs = 100
 display_step = 5
 
 input_data = np.array(input_data, dtype=np.float32)
 output_data = np.array(output_data, dtype=np.float32)
 
+# Show data
 # test = []
 # a_pbar = Bar('Preparing graph', max = len(input_data)*3000)
 # for g in input_data:
@@ -84,19 +85,22 @@ output_data = np.array(output_data, dtype=np.float32)
 # test = np.asarray(test, dtype=np.float32)
 # print(test)
 
-# print(input_data.shape)
+# plt.show(plt.plot(test))
+
+print(input_data, output_data)
 
 def train():
     x = tf.placeholder(tf.float32, [None, input_data.shape[1]])
     y = tf.placeholder(tf.float32, [None, output_data.shape[1]])
 
     #model
-    W = tf.Variable(tf.zeros([input_data.shape[1],output_data.shape[1]]))
+    W = tf.Variable(tf.random_normal([input_data.shape[1],output_data.shape[1]], stddev=0.35))
     b = tf.Variable(tf.zeros([output_data.shape[1]]))
+    
     #linear model
     model = tf.nn.softmax(tf.matmul(x, W) + b)
     #cross entropy
-    cost_function = -tf.reduce_sum(y * tf.log(model))
+    cost_function = -tf.reduce_sum(y * tf.log(model + 1e-10))
     #gradient descent
     optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost_function)
     #initializing
@@ -106,8 +110,8 @@ def train():
     with tf.Session() as sess:
         sess.run(init)
         #training
-        avg_cost = 0.
         for iteration in range (epochs):
+            avg_cost = 0.
             #fitting data
             sess.run(optimizer, feed_dict={x: input_data, y: output_data})
             #calculating total loss
