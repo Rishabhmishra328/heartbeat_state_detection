@@ -23,9 +23,36 @@ def sigmoid(x):
     res = np.asarray(res, dtype=np.float32)
     return res
 
+def detect_state(test_filenames):
+    if not os.path.exists('./data/output/'):
+        os.makedirs('./data/output/')
+
+    test_filenames = [test_filenames.values[i][:13] + 'Aunlabelledtest' + test_filenames.values[i][13:] for i in range(len(test_filenames.values))]
+    # plot_example = []
+    test = []
+    test_file_pbar = Bar('Test audio preperation progress', max = len(test_filenames))
+    for file in test_filenames:
+        file_data = wv.read(file, mmap = False)
+        # plt.show(plt.plot(np.ndarray.flatten(file_data[1])))
+        test_file_pbar.next()
+        test_data = []
+        for index in xrange(0,len(file_data[1]), 3000):
+            test_data.append(sigmoid(file_data[1][index:index+3000]))
+        test_data = np.asarray(test_data[:-1])
+        test.append(test_data)
+        # plot_example = test_data
+        # print(test_data)
+    # plt.show(plt.plot(np.ndarray.flatten(plot_example)))
+    return test
+
+
 #Data preperation
 df_data = pd.read_csv('./data/set_a_timing.csv')
 df_data[['fname']] = './data/' + df_data[['fname']]
+
+df_test = pd.read_csv('./data/set_a.csv')
+df_test =df_test.loc[df_test['label'].isnull()]
+df_test[['fname']] = './data/' + df_test[['fname']]
 
 fname = df_data['fname']
 sound = df_data['sound']
@@ -87,7 +114,7 @@ output_data = np.array(output_data, dtype=np.float32)
 
 # plt.show(plt.plot(test))
 
-print(input_data, output_data)
+# print(input_data, output_data)
 
 def train():
     x = tf.placeholder(tf.float32, [None, input_data.shape[1]])
@@ -122,11 +149,13 @@ def train():
 
         print('Training complete')
 
-        # #testing
-        # predictions = tf.equal(tf.argmax(model, 1), tf.argmax(y, 1)) 
-        # #accuracy
-        # accuracy = tf.reduce_mean(tf.cast(predictions, 'float'))
-        # print('Accuracy : ', accuracy.eval({x: test_input_data, y: test_output_data}), 'Predictions : ', predictions.eval({x: test_input_data, y: test_output_data}))
+        #prediction
+        for file in detect_state(df_test['fname']):
+            for batch in file:
+                print(batch, len(batch))
+                m = tf.argmax(model)
+                print('Accuracy : ', m.eval({x: file}), 'Length : ', len(m.eval({x: file})))
+                # print(batch)
 
 train()
 
