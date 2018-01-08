@@ -151,11 +151,9 @@ def train():
 
         #prediction
         for file in detect_state(df_test['fname']):
-            for batch in file:
-                print(batch, len(batch))
-                m = tf.argmax(model)
-                print('Accuracy : ', m.eval({x: file}), 'Length : ', len(m.eval({x: file})))
-                # print(batch)
+            m = tf.argmax(model, 1)
+            print('Accuracy : ', m.eval({x: file}), 'Length : ', len(m.eval({x: file})))
+            # print(batch)
 
 train()
 
