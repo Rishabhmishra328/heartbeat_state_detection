@@ -6,6 +6,7 @@ import pandas as pd
 import os
 from progress.bar import Bar
 import math
+import csv
 
 def sigmoid(x):
     max_val = 0
@@ -36,8 +37,9 @@ def detect_state(test_filenames):
         # plt.show(plt.plot(np.ndarray.flatten(file_data[1])))
         test_file_pbar.next()
         test_data = []
-        for index in xrange(0,len(file_data[1]), 3000):
-            test_data.append(sigmoid(file_data[1][index:index+3000]))
+        for index in xrange(len(file_data[1])/100):
+            if((index*500)+3000 < len(file_data[1])):
+                test_data.append(sigmoid(file_data[1][index*500:(index*500)+3000]))
         test_data = np.asarray(test_data[:-1])
         test.append(test_data)
         # plot_example = test_data
@@ -149,11 +151,19 @@ def train():
 
         print('Training complete')
 
+        output = []
         #prediction
-        for file in detect_state(df_test['fname']):
-            m = tf.argmax(model, 1)
-            print('Accuracy : ', m.eval({x: file}), 'Length : ', len(m.eval({x: file})))
-            # print(batch)
+        for file, filename in zip(detect_state(df_test['fname']), df_test['fname']):
+            confidence = model.eval({x: file})
+            for index in range(len(confidence)):
+                if(np.amax(confidence[index]) > 0.9):
+                    sound_type = 'S1' if np.argmax(confidence[index]) == 0 else 'S2'
+                    output.append([np.amax(confidence[index]), index*500, sound_type, filename])
+                        
+        with open("output.csv",'w') as resultFile:
+            wr = csv.writer(resultFile)
+            wr.writerow(['confidence','location','sound','fpath'])
+            wr.writerows(output)
 
 train()
 
